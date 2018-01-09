@@ -1,6 +1,6 @@
 /**
  * Copyright (C) 2013 The Android Open Source Project
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2017-2018 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -171,15 +171,8 @@ public class AppOpsDetails extends SettingsPreferenceFragment {
         mPreferenceScreen.removeAll();
         setAppHeader(mPackageInfo);
 
-        boolean isPlatformSigned = isPlatformSigned();
-        for (AppOpsState.OpsTemplate tpl : AppOpsState.ALL_TEMPLATES) {
-            /* If we are platform signed, only show the root switch, this
-             * one is safe to toggle while other permission-based ones could
-             * certainly cause system-wide problems
-             */
-            if (isPlatformSigned && tpl != AppOpsState.SU_TEMPLATE) {
-                 continue;
-            }
+        AppOpsState.OpsTemplate[] allTemplates = getTemplates();
+        for (AppOpsState.OpsTemplate tpl : allTemplates) {
             List<AppOpsState.AppOpEntry> entries = mState.buildState(tpl,
                     mPackageInfo.applicationInfo.uid, mPackageInfo.packageName, true);
             for (final AppOpsState.AppOpEntry entry : entries) {
@@ -270,6 +263,130 @@ public class AppOpsDetails extends SettingsPreferenceFragment {
         return true;
     }
 
+    private AppOpsState.OpsTemplate[] getTemplates() {
+        /* If we are platform signed, only show the root switch, this
+         * one is safe to toggle while other permission-based ones could
+         * certainly cause system-wide problems
+         */
+        if (isPlatformSigned()) {
+            return new AppOpsState.OpsTemplate[]{ AppOpsState.SU_TEMPLATE };
+        }
+
+        int length = AppOpsState.ALL_PERMS_TEMPLATES.length;
+        AppOpsState.OpsTemplate[] allTemplates = new AppOpsState.OpsTemplate[length];
+        // Loop all existing templates and set the visibility of each perm to true
+        for (int i = 0; i < length; i++) {
+            AppOpsState.OpsTemplate tpl = AppOpsState.ALL_PERMS_TEMPLATES[i];
+            for (int j = 0; j < tpl.ops.length; j++) {
+                // we only want to use the template's orderings, not the visibility
+                tpl.showPerms[j] = true;
+            }
+
+            allTemplates[i] = tpl;
+        }
+
+        return allTemplates;
+    }
+
+    private Drawable getIconByPermission(String perm) {
+        Drawable icon = null;
+        if (perm != null) {
+            try {
+                PermissionInfo pi = mPm.getPermissionInfo(perm, 0);
+                if (pi.group != null) {
+                    PermissionGroupInfo pgi = mPm.getPermissionGroupInfo(pi.group, 0);
+                    if (pgi.icon != 0) {
+                        icon = pgi.loadIcon(mPm);
+                    }
+                }
+            } catch (NameNotFoundException e) {
+            }
+        }
+        return icon;
+    }
+
+    private ListPreference getListPrefForEntry(final AppOpsState.AppOpEntry entry, Drawable icon) {
+        final Resources res = getActivity().getResources();
+
+        final AppOpsManager.OpEntry firstOp = entry.getOpEntry(0);
+        final AppOpsManager.PackageOps pkgOps = entry.getPackageOps();
+        final int uid = pkgOps.getUid();
+        final String pkgName = pkgOps.getPackageName();
+        final int switchOp = AppOpsManager.opToSwitch(firstOp.getOp());
+        final int mode = mAppOps.checkOpNoThrow(switchOp, uid, pkgName);
+        final CharSequence opName = entry.getSwitchText(mState);
+
+        ListPreference listPref = new ListPreference(getActivity());
+        listPref.setLayoutResource(R.layout.preference_appops);
+        listPref.setIcon(icon);
+        listPref.setTitle(opName);
+        listPref.setDialogTitle(opName);
+        listPref.setEntries(R.array.app_ops_permissions);
+        listPref.setEntryValues(MODE_ENTRIES);
+        listPref.setValueIndex(modeToPosition(mode));
+        String summary = getSummary(listPref.getEntry(), entry.getCountsText(res),
+                entry.getTimeText(res, true));
+        listPref.setSummary(summary);
+        listPref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                ListPreference listPref = (ListPreference) preference;
+                String value = newValue.toString();
+                int selectedIndex = listPref.findIndexOfValue(value);
+                mAppOps.setMode(switchOp, uid, pkgName, positionToMode(selectedIndex));
+                String summary = getSummary(listPref.getEntries()[selectedIndex],
+                        entry.getCountsText(res), entry.getTimeText(res, true));
+                listPref.setSummary(summary);
+                return true;
+            }
+        });
+
+        return listPref;
+    }
+
+    private SwitchPreference getSwitchPrefForEntry(final AppOpsState.AppOpEntry entry,
+                                                   Drawable icon) {
+        final Resources res = getActivity().getResources();
+
+        final AppOpsManager.OpEntry firstOp = entry.getOpEntry(0);
+        final AppOpsManager.PackageOps pkgOps = entry.getPackageOps();
+        final int uid = pkgOps.getUid();
+        final String pkgName = pkgOps.getPackageName();
+        final int switchOp = AppOpsManager.opToSwitch(firstOp.getOp());
+        final int mode = mAppOps.checkOpNoThrow(switchOp, uid, pkgName);
+        final CharSequence opName = entry.getSwitchText(mState);
+
+        SwitchPreference switchPref = new SwitchPreference(getActivity());
+        switchPref.setLayoutResource(R.layout.preference_appops);
+        switchPref.setIcon(icon);
+        switchPref.setTitle(opName);
+        String summary = getSummary(entry.getCountsText(res), entry.getTimeText(res, true));
+        switchPref.setSummary(summary);
+        switchPref.setChecked(mode == AppOpsManager.MODE_ALLOWED);
+        switchPref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference,
+                                              Object newValue) {
+                Boolean isChecked = (Boolean) newValue;
+                mAppOps.setMode(switchOp, uid, pkgName,
+                        isChecked ? AppOpsManager.MODE_ALLOWED
+                                : AppOpsManager.MODE_IGNORED);
+                return true;
+            }
+        });
+
+        return switchPref;
+    }
+
+    private Preference getNoBlockablePermissionsPref() {
+        Preference emptyPref = new Preference(getActivity());
+        emptyPref.setTitle(R.string.app_ops_no_blockable_permissions);
+        emptyPref.setSelectable(false);
+        emptyPref.setEnabled(false);
+        return emptyPref;
+    }
+
+>>>>>>> 55ca6d7... AppOpsDetails: Display all missing ops
     private void setIntentAndFinish(boolean finish, boolean appChanged) {
         Intent intent = new Intent();
         intent.putExtra(ManageApplications.APP_CHG, appChanged);
