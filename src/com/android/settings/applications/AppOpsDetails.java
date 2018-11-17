@@ -385,7 +385,6 @@ public class AppOpsDetails extends SettingsPreferenceFragment {
 
     private Preference getNoBlockablePermissionsPref() {
         Preference emptyPref = new Preference(getActivity());
-        emptyPref.setTitle(R.string.app_ops_no_blockable_permissions);
         emptyPref.setSelectable(false);
         emptyPref.setEnabled(false);
         return emptyPref;
