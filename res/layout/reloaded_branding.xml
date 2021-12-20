@@ -21,8 +21,8 @@
     android:orientation="horizontal" >
 
         <ImageView
-            android:layout_width="700dp"
-            android:layout_height="700dp"
+            android:layout_width="400dp"
+            android:layout_height="400dp"
             android:src="@drawable/reloaded_branding"
             android:scaleType="centerInside"
             android:adjustViewBounds="true" />
