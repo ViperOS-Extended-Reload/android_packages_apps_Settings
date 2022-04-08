@@ -98,7 +98,9 @@ public class AppOpsDetails extends SettingsPreferenceFragment {
     private static HashMap<Integer, Integer> OP_ICONS = new HashMap<>();
 
     static {
+        OP_ICONS.put(AppOpsManager.OP_ACTIVATE_VPN, R.drawable.ic_perm_vpn);
         OP_ICONS.put(AppOpsManager.OP_AUDIO_ALARM_VOLUME, R.drawable.ic_perm_alarm);
+        OP_ICONS.put(AppOpsManager.OP_AUDIO_MEDIA_VOLUME, R.drawable.ic_perm_audio);
         OP_ICONS.put(AppOpsManager.OP_BLUETOOTH_CHANGE, R.drawable.ic_perm_bluetooth);
         OP_ICONS.put(AppOpsManager.OP_BOOT_COMPLETED, R.drawable.ic_perm_boot);
         OP_ICONS.put(AppOpsManager.OP_CHANGE_WIFI_STATE, R.drawable.ic_perm_wifi);
@@ -114,6 +116,7 @@ public class AppOpsDetails extends SettingsPreferenceFragment {
         OP_ICONS.put(AppOpsManager.OP_SYSTEM_ALERT_WINDOW, R.drawable.ic_perm_drawontop);
         OP_ICONS.put(AppOpsManager.OP_TAKE_AUDIO_FOCUS, R.drawable.ic_perm_audio);
         OP_ICONS.put(AppOpsManager.OP_TOAST_WINDOW, R.drawable.ic_perm_notifications);
+        OP_ICONS.put(AppOpsManager.OP_TURN_SCREEN_ON, R.drawable.ic_perm_turnscreenon);
         OP_ICONS.put(AppOpsManager.OP_VIBRATE, R.drawable.ic_perm_vibrate);
         OP_ICONS.put(AppOpsManager.OP_WAKE_LOCK, R.drawable.ic_perm_nosleep);
         OP_ICONS.put(AppOpsManager.OP_WIFI_SCAN, R.drawable.ic_perm_wifi);
@@ -265,6 +268,11 @@ public class AppOpsDetails extends SettingsPreferenceFragment {
             }
         }
 
+        if (mPreferenceScreen.getPreferenceCount() == 0) {
+            Preference noBlockablePermissionsPref = getNoBlockablePermissionsPref();
+            mPreferenceScreen.addPreference(noBlockablePermissionsPref);
+        }
+
         return true;
     }
 
@@ -385,6 +393,7 @@ public class AppOpsDetails extends SettingsPreferenceFragment {
 
     private Preference getNoBlockablePermissionsPref() {
         Preference emptyPref = new Preference(getActivity());
+        emptyPref.setTitle(R.string.app_ops_no_blockable_permissions);
         emptyPref.setSelectable(false);
         emptyPref.setEnabled(false);
         return emptyPref;

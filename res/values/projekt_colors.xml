@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Copyright (c) 2016 Projekt Substratum
+    Copyright (c) 2016-2017 Projekt Substratum
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,6 +31,15 @@
     <color name="storage_summary_title_color">@*android:color/accent_device_default_light</color>
     <!-- Gesture settings switchbar background -->
     <color name="gestures_switchbar_color">@android:color/white</color>
+
+    <!-- Storage icons -->
+    <color name="storage_public">#ff9e9e9e</color>
+    <color name="storage_warning">#fff4511e</color>
+    <color name="storage_private_1">#ff26a69a</color>
+    <color name="storage_private_2">#ffab47bc</color>
+    <color name="storage_private_3">#fff2a600</color>
+    <color name="storage_private_4">#ffec407a</color>
+    <color name="storage_private_5">#ffc0ca33</color>
 
     <!-- Linear color bar -->
     <color name="linear_color_bar_left">@*android:color/accent_device_default_light</color>

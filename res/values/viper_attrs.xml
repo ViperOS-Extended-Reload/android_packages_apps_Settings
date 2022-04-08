@@ -23,4 +23,8 @@
         <attr name="digits" format="integer" />
     </declare-styleable>
 
+    <plurals name="app_ops_count">
+        <item quantity="one">bir dəfə</item>
+        <item quantity="other">%d dəfə</item>
+    </plurals>
 </resources>

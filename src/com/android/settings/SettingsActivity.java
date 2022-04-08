@@ -554,6 +554,12 @@ public class SettingsActivity extends SettingsDrawerActivity
     @Override
     protected void onCreate(Bundle savedState) {
         super.onCreate(savedState);
+
+        if (isLockTaskModePinned() && !isSettingsRunOnTop() && !isLaunchableInTaskModePinned()) {
+            Log.w(LOG_TAG, "Devices lock task mode pinned.");
+            finish();
+        }
+
         long startTime = System.currentTimeMillis();
 
         // Should happen before any call to getIntent()
@@ -1424,7 +1430,8 @@ public class SettingsActivity extends SettingsDrawerActivity
     }
 
     public void startSuggestion(Intent intent) {
-        if (intent == null || ActivityManager.isUserAMonkey()) {
+        if (intent == null || ActivityManager.isUserAMonkey()
+                || getPackageManager().queryIntentActivities(intent, 0).isEmpty()) {
             return;
         }
         mCurrentSuggestion = intent.getComponent();
@@ -1439,5 +1446,25 @@ public class SettingsActivity extends SettingsDrawerActivity
                     PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    /**
+     * @return whether or not the activity can be launched from other apps in the pinning screen.
+     */
+    public boolean isLaunchableInTaskModePinned() {
+        return false;
+    }
+
+    private boolean isLockTaskModePinned() {
+        final ActivityManager activityManager =
+            getApplicationContext().getSystemService(ActivityManager.class);
+        return activityManager.getLockTaskModeState() == ActivityManager.LOCK_TASK_MODE_PINNED;
+    }
+    private boolean isSettingsRunOnTop() {
+        final ActivityManager activityManager =
+            getApplicationContext().getSystemService(ActivityManager.class);
+        final String taskPkgName = activityManager.getRunningTasks(1 /* maxNum */)
+            .get(0 /* index */).baseActivity.getPackageName();
+        return TextUtils.equals(getPackageName(), taskPkgName);
     }
 }
